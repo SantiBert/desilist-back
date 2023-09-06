@@ -1,0 +1,23 @@
+#compiled output
+.vscode 
+node_modules 
+/reports 
+/coverage 
+/logs 
+# code formatter
+.eslintrc
+.eslintignore
+.editorconfig
+.huskyrc
+.lintstagedrc.json
+.prettierrc
+/dist
+# test
+jest.config.js
+# docker
+Dockerfile.zipdocdes
+
+.gitignore
+
+
+

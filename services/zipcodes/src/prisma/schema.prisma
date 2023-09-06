@@ -1,0 +1,58 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")  
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Country {
+  id     Int     @id @default(autoincrement())
+  name   String  @unique
+  alpha2 String
+  alpha3 String?
+  iso    String?
+  state  State[]
+
+  @@map("countries")
+}
+
+model State {
+  id         Int     @id @default(autoincrement())
+  name       String
+  abbr       String
+  country    Country @relation(fields: [country_id], references: [id], onDelete: Cascade)
+  country_id Int
+  city       City[]
+
+  @@map("states")
+  @@unique([abbr, country_id])
+}
+
+model City {
+  id       Int       @id @default(autoincrement())
+  name     String
+  state    State     @relation(fields: [state_id], references: [id], onDelete: Cascade)
+  state_id Int
+  zip_code ZipCode[]
+
+  @@map("cities")
+  @@unique([name, state_id])
+}
+
+model ZipCode {
+  id      Int      @id @default(autoincrement())
+  code    String
+  type    String
+  city    City     @relation(fields: [city_id], references: [id], onDelete: Cascade)
+  city_id Int
+  lat     Decimal?
+  lon     Decimal?
+
+  @@map("zip_codes")
+  @@unique([code, city_id])
+}

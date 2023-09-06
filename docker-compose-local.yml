@@ -1,0 +1,106 @@
+version: '3.7'
+
+services:
+  backend-desilist:
+    image: desilist-backend-img-local
+    build:
+      context: .
+      target: development-build-stage
+      dockerfile: Dockerfile
+    container_name: backend-local
+    ports:
+      - '${PORT}:3001'
+    volumes:
+      - ./src:/app/src
+      - /app/node_modules
+      - type: bind
+        source: ./src/prisma
+        target: /app/src/prisma
+    restart: unless-stopped
+    networks:
+      - desilist-app
+    links:
+      - dbdesilist
+    depends_on:
+      - dbdesilist
+  notifications-service-local:
+    image: desilist-notifications-img-local
+    build:
+      context: ./services/notifications
+      target: development-build-stage
+      dockerfile: Dockerfile.notifications
+    container_name: notifications-local
+    ports:
+      - '${NS_PORT}:5000'
+    volumes:
+      - ./src:/app/src
+      - /app/node_modules
+    restart: unless-stopped
+    networks:
+      - desilist-app
+    depends_on:
+      - dbdesilist
+
+  zipcodes-service-local:
+    image: desilist-zipcodes-img-local
+    build:
+      context: ./services/zipcodes
+      target: development-build-stage
+      dockerfile: Dockerfile.zipcodes
+    container_name: zipcodes-local
+    ports:
+      - '${ZC_PORT}:7000'
+    volumes:
+      - ./src:/app/src
+      - /app/node_modules
+    restart: unless-stopped
+    networks:
+      - desilist-app
+    depends_on:
+      - dbdesilist
+      
+  chat-service-local:
+    image: desilist-chat-img-local
+    build:
+      context: ./chats-service
+      target: development-build-stage
+      dockerfile: Dockerfile.chat
+    container_name: chat-local
+    ports:
+      - '${CT_PORT}:8000'
+    volumes:
+      - ./src:/app/src
+      - /app/node_modules
+    
+    restart: unless-stopped
+    networks:
+      - desilist-app
+    
+    depends_on:
+      - dbdesilist
+ 
+  
+  dbdesilist:
+    image: kartoza/postgis:15-3
+    container_name: desilist-db-local
+    restart: unless-stopped
+    tty: true
+    volumes:
+      - ${POSTGRES_VOLUMEN_PATH}:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - DB_VOLUME_PATH=/opt/postgres/data
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    networks:
+      - desilist-app
+
+networks:
+  desilist-app:
+    driver: bridge
+
+volumes:
+  data:
+    driver: local

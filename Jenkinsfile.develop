@@ -1,0 +1,91 @@
+pipeline {
+    agent {label 'desi_dev_stagging'}
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '5'))
+    }
+    environment {
+        DATABASE_URL=credentials('desi-dev-db-url')
+    }
+    stages {
+        stage('Pull-Backend') {
+            steps{
+                dir('/home/ubuntu/dev-backend-repo/') {
+                    withCredentials([gitUsernamePassword(credentialsId: 'greenskytech-git-key', gitToolName: 'git-tool')]) {
+                        sh 'git checkout .'
+                        sh 'git pull origin development'
+                    }
+                }
+            }
+            post {
+                failure  {
+                    emailext attachLog: true, body: 'Fallo en Pull-Backend', subject: 'Fallo en Pull-Backend en rama development',to: 'jmgonzalez@quorumit.com,fpesoa@quorumit.com'
+                }
+            }
+        }
+        stage('Run-Migrations') {
+            steps{
+                dir('/home/ubuntu/dev-backend-repo/') {
+                    sh 'rm -rf node_modules'
+                    sh 'npm install'
+                    sh 'npx prisma migrate deploy'
+                }
+            }
+            post {
+                failure  {
+                    emailext attachLog: true, body: 'Fallo en Run-Migrations', recipientProviders: [developers()], subject: 'Fallo en Run-Migrations en rama development',to: 'jmgonzalez@quorumit.com,fpesoa@quorumit.com,mojeda@quorumit.com'
+                }
+            }
+        }
+        
+        stage('Deploy-Backend') {
+            steps{
+                dir('/home/ubuntu/dev-backend-repo/') {
+                    sh 'npm install'
+                    sh 'npm run build'
+                    sh 'pm2 reload ecosystem.config.js --only dev'
+                }
+                dir('/home/ubuntu/dev-backend-repo/services/notifications/') {
+                    sh 'rm -rf node_modules'
+                    sh 'npm install'
+                    sh 'npm run build'
+                    sh 'pm2 reload notifications.config.js --only notif-dev'
+                }
+                dir('/home/ubuntu/dev-backend-repo/services/zipcodes/') {
+                    sh 'rm -rf node_modules'
+                    sh 'npm install'
+                    sh 'npm run build'
+                    sh 'pm2 reload zipcodes.config.js --only zipcode-dev'
+                }
+                dir('/home/ubuntu/dev-backend-repo/chats-service/') {
+                    sh 'rm -rf node_modules'
+                    sh 'npm install'
+                    sh 'npm run build'
+                    sh 'pm2 reload chats.config.js --only chats-dev'
+                }
+            }
+            post {
+                failure  {
+                    emailext attachLog: true, body: 'Fallo en Deploy-Backend', recipientProviders: [developers()], subject: 'Fallo en Deploy-Backend en rama development',to: 'jmgonzalez@quorumit.com,fpesoa@quorumit.com,mojeda@quorumit.com'
+                }
+            }
+        }
+        stage('Run-Seeds') {
+            steps{
+                dir('/home/ubuntu/dev-backend-repo/') {
+                    sh 'npx prisma db seed'
+                }
+            }
+            post {
+                failure  {
+                    emailext attachLog: true, body: 'Fallo en Run-Seeds', recipientProviders: [developers()], subject: 'Fallo en Run-Seeds en rama development',to: 'jmgonzalez@quorumit.com,fpesoa@quorumit.com,mojeda@quorumit.com'
+                }
+            }
+        }
+    }
+    post {
+        success {
+            emailext attachLog: true, body: 'Deploy exitoso en development',  recipientProviders: [developers()], subject: 'Deploy exitoso en develop',to: 'jmgonzalez@quorumit.com,fpesoa@quorumit.com,mojeda@quorumit.com'
+        }
+    }
+}
+

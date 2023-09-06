@@ -1,0 +1,8 @@
+export const enum LISTING_STATUS {
+  ACTIVE = 1,
+  INACTIVE,
+  DRAFT,
+  FLAGGED,
+  PENDING,
+  DENIED
+}

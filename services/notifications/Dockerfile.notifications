@@ -1,0 +1,21 @@
+FROM node:16.3.0-alpine as common-build-stage
+
+WORKDIR /app
+
+COPY package.json .
+
+COPY . .
+
+RUN npm install
+RUN npm run build
+RUN npm install pm2 -g
+
+EXPOSE 5000
+
+# Development build stage
+FROM common-build-stage as development-build-stage
+
+ENV NODE_ENV development
+COPY --from=common-build-stage /app/dist .
+
+CMD ["pm2-runtime", "start" ,"notifications.config.js", "--only", "notif-dev"]

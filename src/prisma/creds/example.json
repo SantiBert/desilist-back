@@ -1,0 +1,9 @@
+{
+	"full_name": "Bart Simpson",
+	"email": "bart@gmail.com",
+	"password": "Bart12345",
+	"zip_code": "01101",
+	"country": "EEUU",
+	"city": "Springfield",
+	"state": "Massachusetts"
+}

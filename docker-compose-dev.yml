@@ -1,0 +1,114 @@
+version: '3.7'
+
+services:
+  backend-desilist:
+    image: backend-desilist-img
+    build:
+      context: .
+      target: development-build-stage
+      dockerfile: Dockerfile
+    container_name: backend-desilist
+    ports:
+      - '${PORT}:3001'
+    restart: 'on-failure:60'
+    networks:
+      - network-desilist
+    links:
+      - dbdesilist
+    depends_on:
+      - dbdesilist
+  
+  desilist-frontend:
+    image: frontend-desilist-img
+    build:
+      context: ../desilist-frontend
+      target: development-build-stage
+      dockerfile: Dockerfile
+    container_name: frontend-desilist-local
+    ports:
+      - '${PORT_FRONT}:3000'
+
+  notifications-service:
+    image: desilist-notifications-img
+    build:
+      context: ./services/notifications
+      target: development-build-stage
+      dockerfile: Dockerfile.notifications
+    container_name: notifications
+    ports:
+      - '${NS_PORT}:5000'
+    restart: 'on-failure:60'
+    networks:
+      - network-desilist
+    links:
+      - dbdesilist
+      - backend-desilist
+    depends_on:
+      - dbdesilist
+      - backend-desilist
+  zipcodes-service:
+    image: desilist-zipcodes-img
+    build:
+      context: ./services/zipcodes
+      target: development-build-stage
+      dockerfile: Dockerfile.zipcodes
+    container_name: zipcodes-desilist
+    ports:
+      - '${ZC_PORT}:7000'
+    restart: 'on-failure:60'
+    networks:
+      - network-desilist
+    links:
+      - dbdesilist
+      - backend-desilist
+    depends_on:
+      - dbdesilist
+      - backend-desilist
+  chat-service:
+    image: desilist-chat-img
+    build:
+      context: ./chats-service
+      target: development-build-stage
+      dockerfile: Dockerfile.chat
+    container_name: chat-desilist
+    ports:
+      - '${CT_PORT}:8000'
+    
+    restart: 'on-failure:60'
+    networks:
+      - network-desilist
+    links:
+      - dbdesilist
+      - backend-desilist
+    depends_on:
+      - dbdesilist
+      - backend-desilist
+  
+  dbdesilist:
+    image: postgres:14.1-alpine
+    container_name: desilist-db
+    restart: on-failure:60
+    tty: true
+    volumes:
+      - ${POSTGRES_VOLUMEN_PATH}:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    networks:
+      - network-desilist
+
+  reverser-proxy:
+    image: nginx:stable-alpine-slim
+    volumes:
+      ./nginx:/etc/nginx/conf.d
+    
+networks:
+  network-desilist:
+    driver: bridge
+
+volumes:
+  data:
+    driver: local

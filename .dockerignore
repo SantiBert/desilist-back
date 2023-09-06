@@ -1,0 +1,28 @@
+node_modules 
+./services/ 
+chats-service/ 
+#compiled output
+.vscode 
+node_modules 
+/reports 
+/coverage 
+/logs 
+# code formatter
+.eslintrc
+.eslintignore
+.editorconfig
+.huskyrc
+.lintstagedrc.json
+.prettierrc
+/dist
+# test
+jest.config.js
+
+# docker
+Dockerfile
+docker-compose*.yml
+
+.gitignore
+.dockerignore
+
+

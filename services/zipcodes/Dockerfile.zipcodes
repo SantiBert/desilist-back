@@ -1,0 +1,25 @@
+# Common build stage
+FROM node:16.3.0-alpine as common-build-stage
+
+WORKDIR /app
+
+COPY package.json .
+
+RUN apk update && apk --no-cache --update add dcron
+
+RUN npm install
+COPY . .
+RUN npm install pm2 -g
+
+EXPOSE 7000
+
+# Development build stage
+FROM common-build-stage as development-build-stage
+WORKDIR /app
+COPY . .
+ENV NODE_ENV development
+RUN npm run prisma:generate
+RUN npm run build
+
+
+CMD ["pm2-runtime", "start" ,"zipcodes.config.js", "--only", "zipcode-dev"]

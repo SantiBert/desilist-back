@@ -1,0 +1,62 @@
+{
+  "parser": "@typescript-eslint/parser",
+  "extends": ["prettier", "plugin:@typescript-eslint/recommended", "plugin:prettier/recommended"],
+  "parserOptions": {
+    "ecmaVersion": 2018,
+    "sourceType": "module"
+  },
+  "rules": {
+    // possible problems
+    "arrow-body-style": ["error", "as-needed"],                             // requires braces in arrow function bodies
+    "capitalized-comments": ["error", "never"],                             // enforces or disallows capitalization of the first letter of a comment
+    "curly": ["error", "all"],                                              // requires following curly brace conventions
+    "eqeqeq": ["error", "always"],                                          // requires the use of === and !==
+    "no-confusing-arrow": ["error", {"allowParens": true}],                 // disallows arrow functions where they could be confused with comparisons
+    "no-regex-spaces": "error",                                             // disallows multiple spaces in regular expression literals
+    "no-var": "error",                                                      // equires let or const instead of var
+    // "object-curly-spacing": ["error", "never"],                             // enforces consistent spacing inside braces
+
+    // formating
+    // "array-bracket-newline": ["error", "consistent"],                       // enforce linebreaks after opening and before closing array brackets
+    "array-bracket-spacing": ["error", "never"],                            // enforce consistent spacing inside array brackets
+    // "arrow-parens": ["error", "always"],                                    // require parentheses around arrow function arguments
+    "arrow-spacing": ["error", { "before": true, "after": true }],          // enforce consistent spacing before and after the arrow in arrow functions
+    "block-spacing": ["error", "always"],                                   // disallow or enforce spaces inside of blocks after opening block and before closing block
+    "brace-style": ["error", "1tbs", { "allowSingleLine": true }],          // enforce consistent brace style for blocks
+    "comma-dangle": ["error", "never"],                                     // require or disallow trailing commas
+    "comma-spacing": ["error", { "before": false, "after": true }],         // enforce consistent spacing before and after commas
+    "comma-style": ["error", "last"],                                       // enforce consistent comma style
+    "computed-property-spacing": ["error", "never"],                        // enforce consistent spacing inside computed property brackets
+    "eol-last": ["error", "always"],                                        // require or disallow newline at the end of files
+    "func-call-spacing": ["error", "never"],                                // require or disallow spacing between function identifiers and their invocations
+    "generator-star-spacing": ["error", {"before": true, "after": false}],  // enforce consistent spacing around `*` operators in generator functions
+    // "implicit-arrow-linebreak": ["error", "beside"],                        // enforce the location of arrow function bodies
+    // "indent": ["error", 2],                                                 // enforce consistent indentation
+    "semi": ["error", "always"],                                            // require or disallow semicolons instead of ASI
+    "space-in-parens": ["error", "never"],                                  // enforce consistent spacing inside parentheses
+
+    // typescript
+    "@typescript-eslint/ban-types": "error",                                // bans specific types from being used
+    "@typescript-eslint/explicit-function-return-type": "error",            // require explicit return types on functions and class methods
+    "@typescript-eslint/explicit-member-accessibility": [                   // require explicit accessibility modifiers on class properties and methods
+      "error",
+      {
+        "accessibility": "explicit"
+      }
+    ],
+    "@typescript-eslint/explicit-module-boundary-types": 0,                 // require explicit return and argument types on exported functions' and classes' public class methods
+    "@typescript-eslint/interface-name-prefix": 0,                          // enforces consistency of interface naming prefix conventions
+    "@typescript-eslint/naming-convention": [                               // enforces naming conventions for everything across a codebase
+      "error",
+      {
+        "selector": ["variable", "function"],
+        "format": ["camelCase", "UPPER_CASE"],
+        "leadingUnderscore": "allow"
+      }
+    ],
+    "@typescript-eslint/no-parameter-properties": 0,                        // disallow the use of parameter properties in class constructors
+    "@typescript-eslint/no-explicit-any": "off",                            // disallow usage of the any type
+    "@typescript-eslint/no-require-imports": "error",                       // disallows invocation of require()
+    "@typescript-eslint/no-var-requires": "off"                             // disallows the use of require statements except in import statements
+  }
+}

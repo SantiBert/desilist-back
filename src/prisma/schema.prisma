@@ -1,0 +1,870 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["extendedIndexes"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                      String                  @id @default(uuid())
+  full_name               String
+  email                   String                  @unique
+  alternative_email       String?
+  phone_number            String?
+  bio                     String?
+  role_id                 Int
+  status_id               Int
+  created_at              DateTime                @default(now())
+  updated_at              DateTime?
+  deleted_at              DateTime?
+  photo                   String?
+  photo_json              Json?
+  role                    Role                    @relation(fields: [role_id], references: [id])
+  status                  Status                  @relation(fields: [status_id], references: [id])
+  banner                  Banner[]
+  bookmark                Bookmark[]
+  from                    Chat[]                  @relation("from")
+  locked                  Chat[]                  @relation("locked")
+  to                      Chat[]                  @relation("to")
+  chat_email_notification ChatEmailNotification[]
+  sent                    ChatMessage[]           @relation("sent")
+  events                  Event[]
+  listings                Listing[]
+  listing_flag_report     ListingFlagReport[]
+  location                Location[]
+  notification            Notification[]
+  otp                     OTP?
+  password                Password?
+  customer_id             PaymentCustomer?
+  payment                 Payment[]
+  session                 Session[]
+  event_bookmark           EventBookmark[]
+  Ticket                  Ticket[]
+  preference              UserPreference?
+  validation              Validation?
+  eventPayment            EventPayment[]
+  ticketPayment           TicketPayment[]
+  event_flag_report       EventFlagReport[]
+
+  @@map("users")
+}
+
+model UserPreference {
+  id           String @id @default(uuid())
+  user_id      String @unique
+  unsubscribed Json?
+  user         User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("users_preferences")
+}
+
+model Password {
+  id          Int       @id @default(autoincrement())
+  user_id     String    @unique
+  hash        String
+  work_factor Int?
+  created_at  DateTime  @default(now())
+  updated_at  DateTime?
+  user        User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("passwords")
+}
+
+model Status {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  users User[]
+
+  @@map("statuses")
+}
+
+model Role {
+  id           Int                @id @default(autoincrement())
+  name         String             @unique
+  notification Notification[]
+  permissions  PermissionInRole[]
+  user         User[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          Int                @id @default(autoincrement())
+  name        String             @unique
+  description String?
+  action      String
+  roles       PermissionInRole[]
+
+  @@map("permissions")
+}
+
+model PermissionInRole {
+  permission_id Int
+  role_id       Int
+  permission    Permission @relation(fields: [permission_id], references: [id])
+  role          Role       @relation(fields: [role_id], references: [id])
+
+  @@id([permission_id, role_id])
+  @@map("permissions_in_roles")
+}
+
+model OTP {
+  id         Int       @id @default(autoincrement())
+  code       String    @unique
+  user_id    String    @unique
+  created_at DateTime  @default(now())
+  updated_at DateTime?
+  user       User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("otp")
+}
+
+model Validation {
+  id         Int      @id @default(autoincrement())
+  token      String   @unique
+  user_id    String   @unique
+  created_at DateTime @default(now())
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("validations")
+}
+
+model Session {
+  id         Int       @id @default(autoincrement())
+  token      String    @unique
+  user_id    String
+  created_at DateTime  @default(now())
+  updated_at DateTime?
+  user       User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model Location {
+  id       Int     @id @default(autoincrement())
+  user_id  String
+  country  String?
+  zip_code String
+  city     String?
+  state    String?
+  user     User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("locations")
+}
+
+model Category {
+  id                  Int                @id @default(autoincrement())
+  name                String             @unique
+  description         String?
+  icon                String?
+  image               String?
+  order               Int?
+  type                Int                @default(1)
+  banner              Banner[]
+  event_subcategories EventSubcategory[]
+  subcategories       Subcategory[]
+
+  @@map("categories")
+}
+
+model Subcategory {
+  id            Int                  @id @default(autoincrement())
+  category_id   Int
+  name          String
+  description   String?
+  icon          String?
+  image         String?
+  custom_fields String[]
+  created_at    DateTime             @default(now())
+  updated_at    DateTime?
+  deleted_at    DateTime?
+  free          Boolean              @default(false)
+  order         Int?
+  landing_show  Boolean              @default(false)
+  category      Category             @relation(fields: [category_id], references: [id], onDelete: Cascade)
+  listings      Listing[]
+  pricing       SubcategoryPricing[]
+
+  @@map("subcategories")
+}
+
+model Listing {
+  id                  Int                 @id @default(autoincrement())
+  subcategory_id      Int
+  user_id             String
+  title               String
+  description         String?
+  status_id           Int
+  highlighted         Boolean             @default(false)
+  re_posted           Boolean             @default(false)
+  images              String[]
+  price               Float?
+  location            Json?
+  contact             Json?
+  website             String?
+  custom_fields       Json?
+  selected_packages   Json?
+  created_at          DateTime            @default(now())
+  updated_at          DateTime?
+  deleted_at          DateTime?
+  paused_at           DateTime?
+  deactivated_at      DateTime?
+  images_json         Json[]
+  listing_status      ListingStatus       @relation(fields: [status_id], references: [id])
+  subcategory         Subcategory         @relation(fields: [subcategory_id], references: [id], onDelete: Cascade)
+  user                User                @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  bookmark            Bookmark[]
+  chat                Chat[]
+  listing_flag_report ListingFlagReport[]
+  listings_flagged    ListingFlagged[]
+  listing_packages    ListingPackage[]
+  payment             Payment[]
+
+  @@map("listings")
+}
+
+model ListingPackage {
+  id                 Int                    @id @default(autoincrement())
+  listing_id         Int
+  basic_package_id   Int
+  promote_package_id Int?
+  active             Boolean                @default(false)
+  created_at         DateTime               @default(now())
+  activated_at       DateTime?
+  paused_at          DateTime?
+  promoted_at        DateTime?
+  created_by         String?
+  updated_at         DateTime?
+  updated_by         String?
+  basic_package      BasicPricingPackage    @relation(fields: [basic_package_id], references: [id])
+  listing            Listing                @relation(fields: [listing_id], references: [id], onDelete: Cascade)
+  promote_package    PromotePricingPackage? @relation(fields: [promote_package_id], references: [id], onDelete: Restrict)
+
+  @@map("listings_packages")
+}
+
+model ListingFlagged {
+  id          Int       @id @default(autoincrement())
+  listing_id  Int
+  reasons_id  Int[]
+  comment     String
+  dismissed   Boolean   @default(false)
+  created_at  DateTime  @default(now())
+  deleted_at  DateTime?
+  new_changes Boolean   @default(false)
+  updated_at  DateTime?
+  listing     Listing   @relation(fields: [listing_id], references: [id])
+
+  @@map("listings_flagged")
+}
+
+model ListingFlagReport {
+  id                         Int                     @id @default(autoincrement())
+  user_id                    String
+  listing_id                 Int
+  reason_id                  Int
+  comment                    String
+  dismissed                  Boolean                 @default(false)
+  created_at                 DateTime                @default(now())
+  listing                    Listing                 @relation(fields: [listing_id], references: [id])
+  listing_flag_report_reason ListingFlagReportReason @relation(fields: [reason_id], references: [id])
+  user                       User                    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("listings_flag_reports")
+}
+
+model ListingFlagReportReason {
+  id                  Int                 @id @default(autoincrement())
+  name                String              @unique
+  description         String
+  listing_flag_report ListingFlagReport[]
+  event_flag_report   EventFlagReport[]
+
+  @@map("listings_flag_reports_reasons")
+}
+
+model ListingStatus {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique
+  events   Event[]
+  listings Listing[]
+
+  @@map("listings_statuses")
+}
+
+model PaymentCustomer {
+  id                 String          @id @default(uuid())
+  customer_id        String          @unique
+  user_id            String          @unique
+  idempotency_key_id Int?            @unique
+  idempotency_key    IdempotencyKey? @relation(fields: [idempotency_key_id], references: [id], onDelete: Restrict)
+  user               User            @relation(fields: [user_id], references: [id])
+
+  @@map("payment_customers")
+}
+
+model Payment {
+  id                 String                 @id
+  user_id            String
+  listing_id         Int
+  idempotency_key_id Int                    @unique
+  amount             Decimal
+  basic_package_id   Int?
+  promote_package_id Int?
+  status             String
+  created_at         DateTime               @default(now())
+  extra_packages     Json[]
+  type               String?
+  method             String?
+  basic_package      BasicPricingPackage?   @relation(fields: [basic_package_id], references: [id])
+  idempotency_key    IdempotencyKey         @relation(fields: [idempotency_key_id], references: [id], onDelete: SetNull)
+  listing            Listing                @relation(fields: [listing_id], references: [id])
+  promote_package    PromotePricingPackage? @relation(fields: [promote_package_id], references: [id])
+  user               User                   @relation(fields: [user_id], references: [id])
+
+  @@map("payments")
+}
+
+model IdempotencyKey {
+  id               Int              @id @default(autoincrement())
+  value            String           @unique
+  request_path     String
+  request_params   String
+  response_code    Int
+  response_body    String
+  recovery_point   String
+  payment_customer PaymentCustomer?
+  payment          Payment?
+
+  @@map("idempotency_keys")
+}
+
+model Country {
+  id     Int     @id @default(autoincrement())
+  name   String  @unique
+  alpha2 String
+  alpha3 String?
+  iso    String?
+  state  State[]
+
+  @@map("countries")
+}
+
+model State {
+  id         Int     @id @default(autoincrement())
+  name       String
+  abbr       String
+  country_id Int
+  country    Country @relation(fields: [country_id], references: [id], onDelete: Cascade)
+  city       City[]
+
+  @@unique([abbr, country_id])
+  @@map("states")
+}
+
+model City {
+  id       Int       @id @default(autoincrement())
+  name     String
+  state_id Int
+  state    State     @relation(fields: [state_id], references: [id], onDelete: Cascade)
+  zip_code ZipCode[]
+
+  @@unique([name, state_id])
+  @@map("cities")
+}
+
+model ZipCode {
+  id      Int      @id @default(autoincrement())
+  code    String
+  city_id Int
+  lat     Decimal?
+  lon     Decimal?
+  city    City     @relation(fields: [city_id], references: [id], onDelete: Cascade)
+
+  @@unique([code, city_id])
+  @@map("zip_codes")
+}
+
+model BasicPricingPackage {
+  id               Int                  @id @default(autoincrement())
+  name             String               @unique
+  duration         Int                  @unique
+  active           Boolean              @default(true)
+  listing_packages ListingPackage[]
+  payment          Payment[]
+  subcategory      SubcategoryPricing[]
+
+  @@map("basic_pricing_packages")
+}
+
+model PromotePricingPackage {
+  id               Int                  @id @default(autoincrement())
+  name             String               @unique
+  duration         Int                  @unique
+  active           Boolean              @default(true)
+  event_price      EventPrice[]
+  listing_packages ListingPackage[]
+  payment          Payment[]
+  subcategory      SubcategoryPricing[]
+  eventPayment     EventPayment[]
+  eventPackage     EventPackage[]     
+
+  @@map("promote_pricing_packages")
+}
+
+model SubcategoryPricing {
+  subcategory_id          Int
+  basic_pricing_id        Int
+  promote_pricing_id      Int
+  basic_per_day           Decimal
+  promote_per_day         Decimal
+  basic_pricing_package   BasicPricingPackage   @relation(fields: [basic_pricing_id], references: [id])
+  promote_pricing_package PromotePricingPackage @relation(fields: [promote_pricing_id], references: [id])
+  subcategory             Subcategory           @relation(fields: [subcategory_id], references: [id], onDelete: Cascade)
+
+  @@id([subcategory_id, basic_pricing_id, promote_pricing_id])
+  @@unique([subcategory_id, basic_pricing_id])
+  @@map("subcategories_pricing")
+}
+
+model Bookmark {
+  user_id    String
+  listing_id Int
+  listing    Listing @relation(fields: [listing_id], references: [id])
+  user       User    @relation(fields: [user_id], references: [id])
+
+  @@id([user_id, listing_id])
+  @@map("bookmarks")
+}
+
+model Banner {
+  id            Int       @id @default(autoincrement())
+  user_id       String
+  banner_type   String
+  name          String?
+  link          String?
+  price         Float?
+  desktop_image String[]
+  mobile_image  String[]
+  category_id   Int?
+  source        String
+  paused        Boolean   @default(false)
+  created_at    DateTime  @default(now())
+  updated_at    DateTime?
+  deleted_at    DateTime?
+  category      Category? @relation(fields: [category_id], references: [id])
+  user          User      @relation(fields: [user_id], references: [id])
+
+  @@map("banners")
+}
+
+model Notification {
+  id         Int                 @id @default(autoincrement())
+  user_id    String
+  scope      Int
+  type       String
+  seen       Boolean
+  title      String              @default("")
+  message    String
+  message_id Int                 @default(1)
+  data       Json?
+  created_at DateTime            @default(now())
+  message_n  NotificationMessage @relation(fields: [message_id], references: [id])
+  role       Role                @relation(fields: [scope], references: [id])
+  user       User                @relation(fields: [user_id], references: [id])
+
+  @@map("notifications")
+}
+
+model NotificationMessage {
+  id           Int            @id @default(autoincrement())
+  title        String         @default("")
+  message      String
+  description  String?
+  vars         String?
+  notification Notification[]
+
+  @@map("notifications_messages")
+}
+
+model Chat {
+  id                      Int                     @id @default(autoincrement())
+  listing_id              Int?
+  room                    String?
+  from_id                 String
+  to_id                   String
+  locked_by               String?
+  status                  String
+  created_at              DateTime                @default(now())
+  updated_at              DateTime?
+  deleted_at              DateTime?
+  date_last_message       DateTime?
+  from                    User                    @relation("from", fields: [from_id], references: [id])
+  listing                 Listing?                @relation(fields: [listing_id], references: [id])
+  locked                  User?                   @relation("locked", fields: [locked_by], references: [id])
+  to                      User                    @relation("to", fields: [to_id], references: [id])
+  chat_email_notification ChatEmailNotification[]
+  chat_message            ChatMessage[]
+
+  @@map("chats")
+}
+
+model ChatMessage {
+  id         Int       @id @default(autoincrement())
+  chat_id    Int
+  message    String
+  date       DateTime  @default(now())
+  time       String
+  seen       Boolean   @default(false)
+  sent_by    String
+  created_at DateTime  @default(now())
+  updated_at DateTime?
+  deleted_at DateTime?
+  chat       Chat      @relation(fields: [chat_id], references: [id])
+  sent       User      @relation("sent", fields: [sent_by], references: [id])
+
+  @@map("chats_messages")
+}
+
+model ChatEmailNotification {
+  user_id String
+  chat_id Int
+  chat    Chat   @relation(fields: [chat_id], references: [id], onDelete: Cascade)
+  user    User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@id([user_id, chat_id])
+  @@map("chats_email_notifications")
+}
+
+model EventSubcategory {
+  id                      Int          @id @default(autoincrement())
+  category_id             Int
+  event_publication_price Float?
+  service_fee             Float?
+  name                    String       @db.VarChar(100)
+  custom_fields           String[]
+  created_at              DateTime     @default(now())
+  updated_at              DateTime?
+  deleted_at              DateTime?
+  is_free                 Boolean      @default(false)
+  list_order              Int?
+  showed_landing          Boolean      @default(false)
+  category                Category     @relation(fields: [category_id], references: [id], onDelete: Cascade)
+  EventPrice              EventPrice[]
+  events                  Event[]
+
+  @@map("event_subcategories")
+}
+
+model EventLocation {
+  id             Int            @id @default(autoincrement())
+  geometry_point Json
+  srid           Int
+  place_id       String
+  venue_name     String         @default("")
+  address_description String?   @default("")
+  city           String         @default("")
+  state          String
+  zipcode        String
+  country        String
+  address        String
+  event_id       Int
+  event          Event    @relation(fields: [event_id], references: [id], onDelete: Cascade)
+
+  @@map("event_locations")
+}
+
+model EventOrganizer {
+  id                Int     @id @default(autoincrement())
+  event_id          Int
+  organization_name String?
+  hosted_by         String?
+  contact_number    String?
+  email             String?
+  event             Event   @relation(fields: [event_id], references: [id], onDelete: Cascade)
+
+  @@map("event_organizers")
+}
+
+model EventPrice {
+  event_subcategory       EventSubcategory      @relation(fields: [event_subcategory_id], references: [id], onDelete: Cascade)
+  event_subcategory_id    Int
+  promote_pricing         PromotePricingPackage @relation(fields: [promote_pricing_id], references: [id], onDelete: Cascade)
+  promote_pricing_id      Int
+  promote_per_day         Decimal
+
+  @@id([event_subcategory_id, promote_pricing_id])
+  @@unique([event_subcategory_id, promote_pricing_id])
+  @@map("event_prices")
+}
+
+model DesilistTerms {
+  id                    Int                   @id @default(autoincrement())
+  term_description      String
+  desilist_terms_events DesilistTermsEvents[]
+
+  @@map("desilist_terms")
+}
+
+model DesilistTermsEvents {
+  event_id         Int
+  desilist_term_id Int
+  desilist_term    DesilistTerms @relation(fields: [desilist_term_id], references: [id], onDelete: Cascade)
+  event            Event         @relation(fields: [event_id], references: [id], onDelete: Cascade)
+
+  @@id([event_id, desilist_term_id])
+  @@map("desilist_terms_events")
+}
+
+model EventTerms {
+  id                 Int                @id @default(autoincrement())
+  term               String
+  event_terms_events EventTermsEvents[]
+
+  @@map("event_terms")
+}
+
+model EventTermsEvents {
+  event_id   Int
+  term_id    Int
+  event      Event      @relation(fields: [event_id], references: [id], onDelete: Cascade)
+  event_term EventTerms @relation(fields: [term_id], references: [id], onDelete: Cascade)
+
+  @@id([event_id, term_id])
+  @@map("event_terms_events")
+}
+
+model Timezone {
+  id           Int     @id @default(autoincrement())
+  abbreviation String  @unique @db.VarChar(4)
+  name         String  @unique @db.VarChar(50)
+  utc_offset   Int
+  event        Event[]
+}
+
+model Event {
+  id                    Int                   @id @default(autoincrement())
+  publisher_id          String
+  subcategory_id        Int
+  status_id             Int
+  title                 String?
+  description           String?
+  has_banner            Boolean
+  start_at              DateTime
+  end_at                DateTime
+  timezone_id           Int
+  has_ticket            Boolean
+  ticket_close_time     DateTime?
+  contact_information   Json?
+  website               String?
+  highlighted           Boolean               @default(false)
+  created_at            DateTime              @default(now())
+  updated_at            DateTime?
+  deleted_at            DateTime?
+  paused_at             DateTime?
+  publisher             User                  @relation(fields: [publisher_id], references: [id], onDelete: Cascade)
+  status                ListingStatus         @relation(fields: [status_id], references: [id])
+  subcategory           EventSubcategory      @relation(fields: [subcategory_id], references: [id])
+  timezone              Timezone              @relation(fields: [timezone_id], references: [id])
+  venue_location        EventLocation[]
+  desilist_terms_events DesilistTermsEvents[]
+  LiveStreaming         LiveStreaming[]
+  event_organizer       EventOrganizer[]
+  terms_event           EventTermsEvents[]
+  Ticket_type           TicketType[]
+  EventBookmark         EventBookmark[]
+  eventPayment          EventPayment[]
+  eventPackage          EventPackage[]
+  eventPending          EventPending[]
+  event_flagged         EventFlagged[]
+  event_flag_report     EventFlagReport[]
+
+  @@map("events")
+}
+
+model Media {
+  id             Int             @id @default(autoincrement())
+  name           String          @db.VarChar(100)
+  live_streaming LiveStreaming[]
+}
+
+model LiveStreaming {
+  id                      Int                     @id @default(autoincrement())
+  url                     String                  @db.Text
+  description             String                  @db.Text
+  media                   Media                   @relation(fields: [media_id], references: [id], onDelete: Cascade)
+  media_id                Int
+  event_id                Int
+  Event                   Event                   @relation(fields: [event_id], references: [id])
+  @@map("live_streamings")
+}
+
+model Ticket {
+  id                    Int           @id @default(autoincrement())
+  qr_code               String        @unique
+  // qr_status             Int
+  qr_status             Json[]
+  ticket_type_id        Int
+  buyer_id              String
+  purchase_order_number String        
+  payment_id            String
+  payment               TicketPayment @relation(fields: [payment_id], references: [id], onDelete: Cascade)
+  // valid_for             DateTime[] @db.Date
+  Buyer                 User          @relation(fields: [buyer_id], references: [id], onDelete: Cascade)
+  Ticket_type           TicketType    @relation(fields: [ticket_type_id], references: [id], onDelete: Cascade)
+
+  @@map("tickets")
+}
+
+model TicketCategory {
+  id          Int          @id @default(autoincrement())
+  name        String
+  Ticket_type TicketType[]
+
+  @@map("ticket_categories")
+}
+
+model TicketType {
+  id                 Int            @id @default(autoincrement())
+  event_id           Int
+  type_id            Int
+  name               String
+  quantity_avaible   Int            @db.Integer
+  unit_price         Float          @db.DoublePrecision
+  max_quantity_order Int
+  description        String
+  valid_for          DateTime[]
+  active             Boolean        @default(true)
+  event              Event          @relation(fields: [event_id], references: [id], onDelete: Cascade)
+  type               TicketCategory @relation(fields: [type_id], references: [id], onDelete: Cascade)
+  Ticket             Ticket[]
+  TicketPaymentTickets  TicketPaymentTickets[]
+
+
+  @@map("ticket_types")
+}
+
+model EventBookmark {
+  user                   User             @relation(fields: [user_id], references: [id])
+  user_id                String
+  event                  Event            @relation(fields: [event_id], references: [id], onDelete: Cascade)
+  event_id               Int
+
+  @@id([user_id, event_id])
+  @@map("event_bookmarks")
+}
+
+model EventPayment {
+  id                     String                     @id
+  user                   User                       @relation(fields: [user_id], references: [id])
+  user_id                String
+  event                  Event                      @relation(fields: [event_id], references: [id], onDelete: Cascade)
+  event_id               Int
+  amount                 Decimal                    @db.Decimal(21,3)
+  promote_package_id     Int?
+  promote_package        PromotePricingPackage?     @relation(fields: [promote_package_id], references: [id], onDelete: Cascade)
+  status                 String?                    @db.Text
+  created_at             DateTime                   @default(now())
+  updated_at             DateTime?
+
+  @@map("event_payments")
+}
+
+model EventPackage {
+  id                     Int                        @id @default(autoincrement())
+  event                  Event                      @relation(fields: [event_id], references: [id], onDelete: Cascade)
+  event_id               Int
+  promote_package        PromotePricingPackage?     @relation(fields: [promote_package_id], references: [id], onDelete: Cascade)
+  promote_package_id     Int?
+  active                 Boolean                    @default(false)
+  created_at             DateTime                   @default(now())
+  created_by             String?
+  updated_at             DateTime?
+  updated_by             String?             
+  paused_at              DateTime?
+  activated_at           DateTime?
+  
+  @@map("event_packages")
+}
+
+model TicketPayment {
+  id                      String                  @id 
+  user_id                 String
+  amount                  Decimal
+  status                  String
+  created_at              DateTime                @default(now())
+  updated_at              DateTime?
+  method                  String?
+  service_fee             Decimal                 @default(0)
+  user                    User                    @relation(fields: [user_id], references: [id])
+  TicketPaymentTickets    TicketPaymentTickets[]
+  Ticket                  Ticket[]
+
+  @@map("ticket_payment")
+}
+
+model TicketPaymentTickets {
+  payment_id         String
+  payment            TicketPayment          @relation(fields: [payment_id], references: [id])
+  quantity           Int
+  ticket_type_id     Int
+  ticket             TicketType             @relation(fields: [ticket_type_id], references: [id])
+
+  @@id([payment_id, ticket_type_id])
+  @@map("ticket_payment_tickets")
+}
+
+model EventPending {
+  id                    Int            @id @default(autoincrement())
+  event_id              Int
+  reason_id             Int?
+  explanation           String?        @db.Text
+  approved              Boolean        @default(false)
+  new_changes           Boolean        @default(true)
+  created_at            DateTime       @default(now())
+  updated_at            DateTime?
+  deleted_at            DateTime?
+  denied_at             DateTime?
+  event                 Event          @relation(fields: [event_id], references: [id])
+  reason                DeniedReasons? @relation(fields: [reason_id], references: [id])
+  @@map("event_pending")
+}
+
+model DeniedReasons {
+  id                    Int           @id @default(autoincrement())
+  name                  String        @db.Text
+  eventPending          EventPending[]
+  @@map("denied_reasons")
+}
+
+model EventFlagged {
+  id                    Int            @id @default(autoincrement())
+  event_id              Int
+  reasons_id            Int[]
+  explanation           String?        @db.Text
+  dismissed             Boolean        @default(false)
+  new_changes           Boolean        @default(true)
+  created_at            DateTime       @default(now())
+  updated_at            DateTime?
+  deleted_at            DateTime?
+  event                 Event          @relation(fields: [event_id], references: [id])
+  
+  @@map("event_flagged")
+}
+
+model EventFlagReport {
+  id                    Int            @id @default(autoincrement())
+  event_id              Int
+  user_id               String
+  reason_id             Int?
+  explanation           String?        @db.Text
+  dismissed             Boolean        @default(false)
+  created_at            DateTime       @default(now())
+  event                 Event          @relation(fields: [event_id], references: [id])
+  user                  User           @relation(fields: [user_id], references: [id])
+  reason                ListingFlagReportReason? @relation(fields: [reason_id], references: [id])
+  @@map("event_flag_reports")
+}
